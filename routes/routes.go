@@ -8,17 +8,15 @@ import (
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
-	userController := controllers.NewUserController()
-
 	api := r.Group("/api")
 	{
 		users := api.Group("/users")
 		{
-			users.GET("/", userController.GetAllUsers)
-			users.POST("/", userController.CreateUser)
-			users.GET("/:id", userController.GetUser)
-			users.PUT("/:id", userController.UpdateUser)
-			users.DELETE("/:id", userController.DeleteUser)
+			users.GET("/getAll", controllers.GetAllUsers)
+			users.POST("/create", controllers.CreateUser)
+			users.GET("/get", controllers.GetUser)
+			users.PUT("/update", controllers.UpdateUser)
+			users.DELETE("/delete", controllers.DeleteUser)
 		}
 	}
 

@@ -1,36 +1,31 @@
 package services
 
 import (
+	"jwt_user/config"
 	"jwt_user/models"
-	"jwt_user/repositories"
 )
 
-type UserService struct {
-	userRepo repositories.UserRepository
+func CreateUser(user *models.User) error {
+	return config.DB.Create(user).Error
+
 }
 
-func NewUserService() *UserService {
-	return &UserService{
-		userRepo: repositories.UserRepository{},
-	}
+func GetUserByID(id uint) (*models.User, error) {
+	var user models.User
+	err := config.DB.First(&user, id).Error
+	return &user, err
 }
 
-func (s *UserService) CreateUser(user *models.User) error {
-	return s.userRepo.Create(user)
+func UpdateUser(user *models.User) error {
+	return config.DB.Save(user).Error
 }
 
-func (s *UserService) GetUserByID(id uint) (*models.User, error) {
-	return s.userRepo.FindByID(id)
+func DeleteUser(id uint) error {
+	return config.DB.Delete(&models.User{}, id).Error
 }
 
-func (s *UserService) UpdateUser(user *models.User) error {
-	return s.userRepo.Update(user)
-}
-
-func (s *UserService) DeleteUser(id uint) error {
-	return s.userRepo.Delete(id)
-}
-
-func (s *UserService) GetAllUsers() ([]models.User, error) {
-	return s.userRepo.FindAll()
+func GetAllUsers() ([]models.User, error) {
+	var users []models.User
+	err := config.DB.Find(&users).Error
+	return users, err
 }

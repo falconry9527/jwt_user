@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"jwt_user/models"
 )
 
 var DB *gorm.DB
@@ -11,11 +12,12 @@ var DB *gorm.DB
 // InitDB 初始化数据库连接
 func InitDB() {
 	var err error
-	dsn := "username:password@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:Conry@1238@tcp(127.0.0.1:3306)/jwt?charset=utf8mb4&parseTime=True&loc=Local"
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
+	DB.AutoMigrate(&models.User{})
 	fmt.Println("Database connection successfully opened")
 }
 
