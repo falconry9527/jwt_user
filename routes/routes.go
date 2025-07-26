@@ -3,12 +3,13 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"jwt_user/controllers"
+	"jwt_user/middleware"
 )
 
-func SetupRouter() *gin.Engine {
-	r := gin.Default()
-
-	api := r.Group("/api")
+func InitRouter() *gin.Engine {
+	router := gin.Default()
+	router.Use(middleware.AuthMiddleware())
+	api := router.Group("/api")
 	{
 		users := api.Group("/users")
 		{
@@ -19,6 +20,5 @@ func SetupRouter() *gin.Engine {
 			users.POST("/delete", controllers.DeleteUser)
 		}
 	}
-
-	return r
+	return router
 }

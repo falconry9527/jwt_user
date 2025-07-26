@@ -14,8 +14,8 @@ func main() {
 	db.InitRedis()
 	defer db.CloseRedis()
 
-	// 设置路由
-	router := routes.SetupRouter()
+	// 初始化路由
+	router := routes.InitRouter()
 
 	// 启动服务器
 	log.Fatal(router.Run(":8080"))
