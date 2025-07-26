@@ -5,7 +5,6 @@ import (
 	"jwt_user/models"
 	"jwt_user/msg"
 	"jwt_user/services"
-	"net/http"
 	"strconv"
 )
 
@@ -74,5 +73,5 @@ func GetAllUsers(ctx *gin.Context) {
 		msg.Error(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, users)
+	msg.Success(ctx, users)
 }

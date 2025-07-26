@@ -1,10 +1,11 @@
 package msg
 
 const (
-	CodeSuccess            = 200 // 成功
-	CodeCreated            = 201 // 创建成功
-	CodeAccepted           = 202 // 已接受
-	CodeNoContent          = 204 // 无内容
+	CodeSuccess   = 200 // 成功
+	CodeCreated   = 201 // 创建成功
+	CodeAccepted  = 202 // 已接受
+	CodeNoContent = 204 // 无内容
+
 	CodeBadRequest         = 400 // 请求错误
 	CodeUnauthorized       = 401 // 未授权
 	CodePaymentRequired    = 402 // 需要付款
