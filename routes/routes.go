@@ -8,7 +8,7 @@ import (
 
 func InitRouter() *gin.Engine {
 	router := gin.Default()
-	router.Use(middleware.AuthMiddleware())
+	router.Use(middleware.JWTAuthMiddleware())
 	api := router.Group("/api")
 	{
 		users := api.Group("/users")
