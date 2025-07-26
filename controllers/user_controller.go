@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"jwt_user/models"
 	"jwt_user/msg"
@@ -24,7 +23,6 @@ func CreateUser(ctx *gin.Context) {
 }
 
 func GetUser(ctx *gin.Context) {
-	fmt.Println(ctx.Params)
 	id, err := strconv.Atoi(ctx.Query("id"))
 	if err != nil {
 		msg.ErrorCode(ctx, msg.ParamError)
