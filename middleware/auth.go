@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"jwt_user/msg"
-	"strings"
 )
 
 func JWTAuthMiddleware() gin.HandlerFunc {
@@ -19,21 +18,13 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		fmt.Println(a)
 
 		// 从请求头中获取 token
-		authHeader := c.GetHeader("Authorization")
-		authHeader = "Bearer" + " " + a
-		if authHeader == "" {
+		tokenString := c.GetHeader("token")
+		tokenString = a
+		if tokenString == "" {
 			msg.ErrorCode(c, msg.StatusUnauthorized)
 			c.Abort()
 			return
 		}
-		// 检查token格式
-		tokenParts := strings.Split(authHeader, " ")
-		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			msg.ErrorCode(c, msg.StatusUnauthorized)
-			c.Abort()
-			return
-		}
-		tokenString := tokenParts[1]
 		// 解析和验证token
 		claims, err := ParseToken(tokenString)
 		if err != nil {
