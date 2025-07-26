@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"jwt_user/models"
 )
 
 var DB *gorm.DB
@@ -17,7 +16,12 @@ func InitDB() {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	DB.AutoMigrate(&models.User{})
+
+	//DB.AutoMigrate(&models.User{})
+	//DB.Create(&models.User{Name: "keke1", Email: "314241", Password: "ewfsvafew"})
+	//DB.Create(&models.User{Name: "keke2", Email: "314242", Password: "ewfsvafew"})
+	//DB.Create(&models.User{Name: "keke3", Email: "314243", Password: "ewfsvafew"})
+
 	fmt.Println("Database connection successfully opened")
 }
 

@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"jwt_user/models"
+	"jwt_user/msg"
 	"jwt_user/services"
 	"net/http"
 	"strconv"
@@ -11,75 +13,68 @@ import (
 func CreateUser(ctx *gin.Context) {
 	var user models.User
 	if err := ctx.ShouldBindJSON(&user); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		msg.ErrorCode(ctx, msg.ParamError)
 		return
 	}
 	if err := services.CreateUser(&user); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		msg.Error(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusCreated, user)
+	msg.Success(ctx, user)
 }
 
 func GetUser(ctx *gin.Context) {
-	id, err := strconv.Atoi(ctx.Param("id"))
+	fmt.Println(ctx.Params)
+	id, err := strconv.Atoi(ctx.Query("id"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		msg.ErrorCode(ctx, msg.ParamError)
 		return
 	}
-
 	user, err := services.GetUserByID(uint(id))
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		msg.ErrorCode(ctx, msg.NotFind)
 		return
 	}
-
-	ctx.JSON(http.StatusOK, user)
+	msg.Success(ctx, user)
 }
 
 func UpdateUser(ctx *gin.Context) {
-	id, err := strconv.Atoi(ctx.Param("id"))
+	id, err := strconv.Atoi(ctx.Query("id"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		msg.ErrorCode(ctx, msg.ParamError)
 		return
 	}
-
 	var user models.User
 	if err := ctx.ShouldBindJSON(&user); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		msg.ErrorCode(ctx, msg.ParamError)
 		return
 	}
 	user.ID = uint(id)
-
 	if err := services.UpdateUser(&user); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		msg.ErrorCode(ctx, msg.ParamError)
 		return
 	}
-
-	ctx.JSON(http.StatusOK, user)
+	msg.Success(ctx, user)
 }
 
 func DeleteUser(ctx *gin.Context) {
-	id, err := strconv.Atoi(ctx.Param("id"))
+	id, err := strconv.Atoi(ctx.Query("id"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		msg.ErrorCode(ctx, msg.ParamError)
 		return
 	}
-
 	if err := services.DeleteUser(uint(id)); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		msg.Error(ctx, err)
 		return
 	}
-
-	ctx.JSON(http.StatusOK, gin.H{"message": "user deleted successfully"})
+	msg.Success(ctx, nil)
 }
 
 func GetAllUsers(ctx *gin.Context) {
 	users, err := services.GetAllUsers()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		msg.Error(ctx, err)
 		return
 	}
-
 	ctx.JSON(http.StatusOK, users)
 }

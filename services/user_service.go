@@ -7,7 +7,6 @@ import (
 
 func CreateUser(user *models.User) error {
 	return config.DB.Create(user).Error
-
 }
 
 func GetUserByID(id uint) (*models.User, error) {
