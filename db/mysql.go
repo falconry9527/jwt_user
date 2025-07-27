@@ -11,7 +11,7 @@ var DB *gorm.DB
 // InitDB 初始化数据库连接
 func InitDB() {
 	var err error
-	dsn := "root:Conry@1238@tcp(127.0.0.1:3306)/jwt?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:ZAqbXlUeg0nnmWRXzyLbhSc9AXuZh4m9@tcp(127.0.0.1:3306)/jwt?charset=utf8mb4&parseTime=True&loc=Local"
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
