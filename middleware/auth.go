@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"jwt_user/middleware/jwt"
 	"jwt_user/msg"
 )
 
@@ -14,7 +15,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 		// 模拟一个用户生成jwt,一般在登录的时候生成，这边简化一下
-		a, _ := GenerateToken(1, "kekeke")
+		a, _ := jwt.GenerateToken(1, "kekeke")
 		fmt.Println(a)
 
 		// 从请求头中获取 token
@@ -26,7 +27,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 		// 解析和验证token
-		claims, err := ParseToken(tokenString)
+		claims, err := jwt.ParseToken(tokenString)
 		if err != nil {
 			msg.ErrorCode(c, msg.StatusUnauthorized)
 			c.Abort()
