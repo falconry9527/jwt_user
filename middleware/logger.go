@@ -3,10 +3,11 @@ package middleware
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"io"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 // RequestLogger 创建一个记录请求信息的中间件
