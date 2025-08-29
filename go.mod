@@ -7,6 +7,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.3
 	github.com/redis/go-redis/v9 v9.11.0
 	github.com/sirupsen/logrus v1.9.3
+	go.opentelemetry.io/otel/trace v1.37.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.30.1
 )
@@ -37,6 +38,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
+	go.opentelemetry.io/otel v1.37.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
