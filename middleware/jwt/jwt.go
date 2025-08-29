@@ -2,8 +2,9 @@ package jwt
 
 import (
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // Claims 自定义声明结构体
@@ -19,10 +20,10 @@ func GenerateToken(userID uint, username string) (string, error) {
 		UserID:   userID,
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(10 * time.Second)), // 过期时间
-			IssuedAt:  jwt.NewNumericDate(time.Now()),                       // 签发时间
-			NotBefore: jwt.NewNumericDate(time.Now()),                       // 生效时间
-			Issuer:    "your-app-name",                                      // 签发者
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(3 * 3600 * time.Second)), // 过期时间
+			IssuedAt:  jwt.NewNumericDate(time.Now()),                             // 签发时间
+			NotBefore: jwt.NewNumericDate(time.Now()),                             // 生效时间
+			Issuer:    "your-app-name",                                            // 签发者
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
