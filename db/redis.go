@@ -1,186 +1,349 @@
 package db
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"jwt_user/config"
 	"time"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/gomodule/redigo/redis"
 )
 
-var (
-	ErrNil = errors.New("no matching record found in redis")
-	ctx    = context.Background()
-)
+var RedisConn *redis.Pool
 
-var RedisClient *redis.Client
-
-func InitRedis() {
+// InitRedis 初始化Redis
+func InitRedis() *redis.Pool {
 	redisConf := config.Config.Redis
-	RedisClient = redis.NewClient(&redis.Options{
-		Addr:         redisConf.Address,
-		Password:     redisConf.Password,
-		DB:           1,
-		PoolSize:     2,               // 连接池大小
-		MinIdleConns: 1,               // 最小空闲连接数
-		DialTimeout:  5 * time.Second, // 连接超时
-		ReadTimeout:  3 * time.Second, // 读取超时
-		WriteTimeout: 3 * time.Second, // 写入超时
-	})
+	// 建立连接池
+	RedisConn = &redis.Pool{
+		MaxIdle:     3,    // 最大的空闲连接数，表示即使没有redis连接时依然可以保持N个空闲的连接，而不被清除，随时处于待命状态。
+		MaxActive:   5,    // 最大的激活连接数，表示同时最多有N个连接   0 表示无穷大
+		Wait:        true, // 如果连接数不足则阻塞等待
+		IdleTimeout: 180 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", fmt.Sprintf("%s:%s", redisConf.Address, redisConf.Port))
+			if err != nil {
+				return nil, err
+			}
+			// 验证密码
+			_, err = c.Do("auth", redisConf.Password)
+			if err != nil {
+				panic("redis auth err " + err.Error())
+			}
+			// 选择db
+			_, err = c.Do("select", redisConf.Db)
+			if err != nil {
+				panic("redis select db err " + err.Error())
+			}
+			return c, nil
+		},
+	}
+	err := RedisConn.Get().Err()
+	if err != nil {
+		panic("redis init err " + err.Error())
+	}
+	return RedisConn
 }
 
-// Close 关闭Redis连接
-func CloseRedis() error {
-	if RedisClient != nil {
-		return RedisClient.Close()
+// RedisSet 设置key、value、time
+func RedisSet(key string, data interface{}, aliveSeconds int) error {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	value, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	if aliveSeconds > 0 {
+		_, err = conn.Do("set", key, value, "EX", aliveSeconds)
+	} else {
+		_, err = conn.Do("set", key, value)
+	}
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-// Ping 测试连接是否存活
-func Ping() error {
-	return RedisClient.Ping(ctx).Err()
-}
-
-// Get 获取字符串值
-func Get(key string) (string, error) {
-	val, err := RedisClient.Get(ctx, key).Result()
-	if err == redis.Nil {
-		return "", ErrNil
+// RedisSetString  设置key、value、time
+func RedisSetString(key string, data string, aliveSeconds int) error {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	var err error
+	if aliveSeconds > 0 {
+		_, err = redis.String(conn.Do("set", key, data, "EX", aliveSeconds))
+	} else {
+		_, err = redis.String(conn.Do("set", key, data))
 	}
-	return val, err
-}
-
-// Set 设置字符串值
-func Set(key string, value interface{}, expiration time.Duration) error {
-	return RedisClient.Set(ctx, key, value, expiration).Err()
-}
-
-// Del 删除key
-func Del(key string) error {
-	return RedisClient.Del(ctx, key).Err()
-}
-
-// Exists 检查key是否存在
-func Exists(key string) (bool, error) {
-	result, err := RedisClient.Exists(ctx, key).Result()
-	return result == 1, err
-}
-
-// Expire 设置key过期时间
-func Expire(key string, expiration time.Duration) (bool, error) {
-	return RedisClient.Expire(ctx, key, expiration).Result()
-}
-
-// TTL 获取key剩余过期时间
-func TTL(key string) (time.Duration, error) {
-	return RedisClient.TTL(ctx, key).Result()
-}
-
-// Incr 自增
-func Incr(key string) (int64, error) {
-	return RedisClient.Incr(ctx, key).Result()
-}
-
-// Decr 自减
-func Decr(key string) (int64, error) {
-	return RedisClient.Decr(ctx, key).Result()
-}
-
-// HSet 哈希设置
-func HSet(key string, field string, value interface{}) error {
-	return RedisClient.HSet(ctx, key, field, value).Err()
-}
-
-// HGet 哈希获取
-func HGet(key string, field string) (string, error) {
-	val, err := RedisClient.HGet(ctx, key, field).Result()
-	if err == redis.Nil {
-		return "", ErrNil
-	}
-	return val, err
-}
-
-// HGetAll 获取所有哈希字段
-func HGetAll(key string) (map[string]string, error) {
-	return RedisClient.HGetAll(ctx, key).Result()
-}
-
-// LPush 列表左推入
-func LPush(key string, values ...interface{}) error {
-	return RedisClient.LPush(ctx, key, values...).Err()
-}
-
-// RPop 列表右弹出
-func RPop(key string) (string, error) {
-	val, err := RedisClient.RPop(ctx, key).Result()
-	if err == redis.Nil {
-		return "", ErrNil
-	}
-	return val, err
-}
-
-// SAdd 集合添加
-func SAdd(key string, members ...interface{}) error {
-	return RedisClient.SAdd(ctx, key, members...).Err()
-}
-
-// SMembers 获取集合所有成员
-func SMembers(key string) ([]string, error) {
-	return RedisClient.SMembers(ctx, key).Result()
-}
-
-// ZAdd 有序集合添加
-func ZAdd(key string, members ...redis.Z) error {
-	return RedisClient.ZAdd(ctx, key, members...).Err()
-}
-
-// ZRange 有序集合范围查询
-func ZRange(key string, start, stop int64) ([]string, error) {
-	return RedisClient.ZRange(ctx, key, start, stop).Result()
-}
-
-// Publish 发布消息
-func Publish(channel string, message interface{}) error {
-	return RedisClient.Publish(ctx, channel, message).Err()
-}
-
-// Subscribe 订阅频道
-func Subscribe(channels ...string) *redis.PubSub {
-	return RedisClient.Subscribe(ctx, channels...)
-}
-
-// GetJson 获取JSON并反序列化
-func GetJson(key string, v interface{}) error {
-	data, err := Get(key)
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal([]byte(data), v)
+	return nil
 }
 
-// SetJson 序列化为JSON并存储
-func SetJson(key string, v interface{}, expiration time.Duration) error {
-	data, err := json.Marshal(v)
+// RedisGet 获取Key
+func RedisGet(key string) ([]byte, error) {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	reply, err := redis.Bytes(conn.Do("get", key))
+	if err != nil {
+		return nil, err
+	}
+	return reply, nil
+}
+
+// RedisGetString 获取Key
+func RedisGetString(key string) (string, error) {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	reply, err := redis.String(conn.Do("get", key))
+	if err != nil {
+		return "", err
+	}
+	return reply, nil
+}
+
+// RedisSetInt64  set int64 value by key
+func RedisSetInt64(key string, data int64, time int) error {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	value, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
-	return Set(key, data, expiration)
+	_, err = redis.Int64(conn.Do("set", key, value))
+	if err != nil {
+		return err
+	}
+	if time != 0 {
+		_, err = redis.Int64(conn.Do("expire", key, time))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-// Lock 分布式锁
-func Lock(key string, value interface{}, expiration time.Duration) (bool, error) {
-	return RedisClient.SetNX(ctx, key, value, expiration).Result()
+// RedisGetInt64 get int64 value by key
+func RedisGetInt64(key string) (int64, error) {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	reply, err := redis.Int64(conn.Do("get", key))
+	if err != nil {
+		return -1, err
+	}
+	return reply, nil
 }
 
-// Unlock 释放分布式锁
-func Unlock(key string) error {
-	return Del(key)
+// RedisDelete 删除Key
+func RedisDelete(key string) (bool, error) {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	return redis.Bool(conn.Do("del", key))
 }
 
-// Eval 执行Lua脚本
-func Eval(script string, keys []string, args ...interface{}) (interface{}, error) {
-	return RedisClient.Eval(ctx, script, keys, args).Result()
+// RedisFlushDB 清空当前DB
+func RedisFlushDB() error {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	_, err := conn.Do("flushdb")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// RedisGetHashOne 获取Heah其中一个值
+func RedisGetHashOne(key, name string) (interface{}, error) {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	reply, err := conn.Do("hgetall", key, name)
+	if err != nil {
+		return nil, err
+	}
+	return reply, nil
+}
+
+// RedisSetHash 设置Hash
+func RedisSetHash(key string, data map[string]string, time interface{}) error {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	for k, v := range data {
+		err := conn.Send("hset", key, k, v)
+		if err != nil {
+			return err
+		}
+	}
+	err := conn.Flush()
+	if err != nil {
+		return err
+	}
+
+	if time != nil {
+		_, err = conn.Do("expire", key, time.(int))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RedisGetHash 获取Hash类型
+func RedisGetHash(key string) (map[string]string, error) {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	reply, err := redis.StringMap(conn.Do("hgetall", key))
+	if err != nil {
+		return nil, err
+	}
+	return reply, nil
+}
+
+// RedisDelHash 删除Hash
+func RedisDelHash(key string) (bool, error) {
+
+	return true, nil
+}
+
+// RedisExistsHash 检查Key是否存在
+func RedisExistsHash(key string) bool {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	exists, err := redis.Bool(conn.Do("hexists", key))
+	if err != nil {
+		return false
+	}
+	return exists
+}
+
+// RedisExists 检查Key是否存在
+func RedisExists(key string) bool {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	exists, err := redis.Bool(conn.Do("exists", key))
+	if err != nil {
+		return false
+	}
+	return exists
+}
+
+// RedisGetTTL 获取Key剩余时间
+func RedisGetTTL(key string) int64 {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	reply, err := redis.Int64(conn.Do("ttl", key))
+	if err != nil {
+		return 0
+	}
+	return reply
+}
+
+// RedisSAdd set 集合
+func RedisSAdd(k, v string) int64 {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	reply, err := conn.Do("SAdd", k, v)
+	if err != nil {
+		return -1
+	}
+	return reply.(int64)
+}
+
+// RedisSmembers 获取集合元素
+func RedisSmembers(k string) ([]string, error) {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	reply, err := redis.Strings(conn.Do("smembers", k))
+	if err != nil {
+		return []string{}, errors.New("读取set错误")
+	}
+	return reply, err
+}
+
+type RedisEncryptionTask struct {
+	RecordOrderFlowId int32  `json:"recordOrderFlow"` //密码转账表ID
+	Encryption        string `json:"encryption"`      //密码串
+	EndTime           int64  `json:"endTime"`         //失效截止时间
+}
+
+// RedisListRpush 列表右侧添加数据
+func RedisListRpush(listName string, encryption string) error {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	_, err := conn.Do("rpush", listName, encryption)
+	return err
+}
+
+// RedisListLRange 取出列表中所有元素
+func RedisListLRange(listName string) ([]string, error) {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	res, err := redis.Strings(conn.Do("lrange", listName, 0, -1))
+	return res, err
+}
+
+// RedisListLRem 删除列表中指定元素
+func RedisListLRem(listName string, encryption string) error {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	_, err := conn.Do("lrem", listName, 1, encryption)
+	return err
+}
+
+// RedisListLength 列表长度
+func RedisListLength(listName string) (interface{}, error) {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	len, err := conn.Do("llen", listName)
+	return len, err
+}
+
+// RedisDelList list 删除整个列表
+func RedisDelList(setName string) error {
+	conn := RedisConn.Get()
+	defer func() {
+		_ = conn.Close()
+	}()
+	_, err := conn.Do("del", setName)
+	return err
 }
