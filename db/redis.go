@@ -46,6 +46,12 @@ func InitRedis() *redis.Pool {
 	return RedisConn
 }
 
+func CloseRedis() {
+	if RedisConn != nil {
+		RedisConn.Close()
+	}
+}
+
 // RedisSet 设置key、value、time
 func RedisSet(key string, data interface{}, aliveSeconds int) error {
 	conn := RedisConn.Get()

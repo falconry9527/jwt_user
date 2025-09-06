@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var DB *gorm.DB
+var Mysql *gorm.DB
 
 // InitDB 初始化数据库连接
 func InitDB() {
@@ -22,7 +22,7 @@ func InitDB() {
 		mysqlConf.Port,
 		mysqlConf.DbName)
 	var err error
-	DB, err = gorm.Open(mysql.New(mysql.Config{
+	Mysql, err = gorm.Open(mysql.New(mysql.Config{
 		DSN:                       dsn,   // DSN data source name
 		DefaultStringSize:         256,   // string 类型字段的默认长度
 		DisableDatetimePrecision:  true,  // 禁用 datetime 精度，MySQL 5.6 之前的数据库不支持
@@ -36,7 +36,7 @@ func InitDB() {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	sqlDB, err := DB.DB()
+	sqlDB, err := Mysql.DB()
 	if err != nil {
 		panic("failed to use database")
 	}
@@ -48,7 +48,7 @@ func InitDB() {
 
 // CloseDB 关闭数据库连接
 func CloseDB() {
-	db, err := DB.DB()
+	db, err := Mysql.DB()
 	if err != nil {
 		panic("failed to get database instance")
 	}
