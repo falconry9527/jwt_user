@@ -27,7 +27,7 @@ func InitRedis() *redis.Pool {
 				return nil, err
 			}
 			// 验证密码
-			_, err = c.Do("auth", redisConf.Password)
+			_, err = c.Do("", redisConf.Password)
 			if err != nil {
 				panic("redis auth err " + err.Error())
 			}
