@@ -5,8 +5,8 @@ port = "3306"
 db_name = "pledge_v21"
 user_name = "root"
 password = "ZAqbXlUeg0nnmWRXzyLbhSc9AXuZh4m9"
-max_open_conns = 0
-max_idle_conns = 0
+max_open_conns = 3
+max_idle_conns = 2
 max_life_time = 0
 
 [redis]
@@ -16,6 +16,6 @@ port = "6379"
 db = 1
 user_name = ""
 password = "pledger_web3"
-max_idle = 0
-max_active = 0
-idle_timeout = 0
+max_idle = 3
+max_active = 5
+idle_timeout = 180
