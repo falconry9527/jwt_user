@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/redis/go-redis/v9"
+	"jwt_user/config"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -16,9 +18,10 @@ var (
 var RedisClient *redis.Client
 
 func InitRedis() {
+	redisConf := config.Config.Redis
 	RedisClient = redis.NewClient(&redis.Options{
-		Addr:         "localhost:6379",
-		Password:     "",
+		Addr:         redisConf.Address,
+		Password:     redisConf.Password,
 		DB:           1,
 		PoolSize:     2,               // 连接池大小
 		MinIdleConns: 1,               // 最小空闲连接数

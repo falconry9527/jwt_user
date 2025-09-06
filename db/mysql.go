@@ -2,26 +2,30 @@ package db
 
 import (
 	"fmt"
+	"jwt_user/config"
+
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
 
 // InitDB 初始化数据库连接
 func InitDB() {
+	mysqlConf := config.Config.Mysql
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		mysqlConf.UserName,
+		mysqlConf.Password,
+		mysqlConf.Address,
+		mysqlConf.Port,
+		mysqlConf.DbName)
 	var err error
-	dsn := "root:ZAqbXlUeg0nnmWRXzyLbhSc9AXuZh4m9@tcp(127.0.0.1:3306)/jwt?charset=utf8mb4&parseTime=True&loc=Local"
-	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
+	// Logger： 设置日志打印sql
 	if err != nil {
 		panic("failed to connect database")
 	}
-
-	//DB.AutoMigrate(&models.User{})
-	//DB.Create(&models.User{Name: "keke1", Email: "314241", Password: "ewfsvafew"})
-	//DB.Create(&models.User{Name: "keke2", Email: "314242", Password: "ewfsvafew"})
-	//DB.Create(&models.User{Name: "keke3", Email: "314243", Password: "ewfsvafew"})
-
 	fmt.Println("Database connection successfully opened")
 }
 
